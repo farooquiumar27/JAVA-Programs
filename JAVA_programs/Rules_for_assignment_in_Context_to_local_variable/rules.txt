@@ -1,0 +1,7 @@
+The variable which is declared inside the fuction is known as the local variable.
+
+1->If there exists total 'n' number of logical paths then in each of the path the variable should be
+initialized with some value.
+2->Compiler did not check the code by executing it , it only ckecks syntactically.
+3->If the local variable is declared as final then it cannot be initialized more then once.
+4->Final loacl variable is not initialized inside the loop.
