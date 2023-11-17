@@ -50,12 +50,13 @@ cbg=new CheckboxGroup( );
 r1=new Checkbox("Male",cbg,true);
 r2=new Checkbox("Female",cbg,false);
 Panel p2=new Panel( );
-p2.setLayout(new GridLayout(1,5));
-p2.add(new Label("              "));
+//p2.setLayout(new GridLayout(1,5));
+p2.setLayout(new GridLayout(1,2));
+//p2.add(new Label("              "));
 p2.add(r1);
-p2.add(new Label("              "));
+//p2.add(new Label("              "));
 p2.add(r2);
-p2.add(new Label("              "));
+//p2.add(new Label("              "));
 
 b1=new Button("Save");
 b2=new Button("Cancel");
