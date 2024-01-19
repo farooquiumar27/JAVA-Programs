@@ -4,7 +4,6 @@ import java.net.*;
 class Server1
 {
 private ServerSocket serverSocket;
-private Socket socket;
 Server1( )
 {
 try
@@ -31,6 +30,7 @@ int c1,c2;
 String p1,p2,p3;
 int rollNumber;
 String name,gender;
+Socket socket;
 while(true)
 {
 System.out.println("Server is ready to accept the request.....");
