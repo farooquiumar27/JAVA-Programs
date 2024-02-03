@@ -1,12 +1,17 @@
 import java.io.*;
 import java.net.*;
+import java.awt.*;
+import javax.swing.*;
+import java.awt.event.*;
 
 class RequestProcessor extends Thread
 {
 private Socket socket;
-RequestProcessor(Socket socket)
+private FTServerFrame fsf;
+RequestProcessor(Socket socket,FTServerFrame fsf)
 {
 this.socket=socket;
+this.fsf=fsf;
 start( );
 }
 public void run( )
@@ -56,6 +61,8 @@ i++;
 String fileName=sb.toString().trim();
 System.out.println("Length of file is : "+lengthOfFile);
 System.out.println("Name of file : "+fileName);
+fsf.updateLog("Length of file is : "+lengthOfFile);
+fsf.updateLog("Name of file : "+fileName);
 
 File file=new File("uploads"+fileName);
 if(file.exists( ))file.delete( );
@@ -76,18 +83,25 @@ ack[0]=1;
 os.write(ack,0,1);
 os.flush( );
 System.out.println("File recived");
+fsf.updateLog("File recived");
 socket.close( );
 }catch(Exception e)
 {
 System.out.println(e);
+fsf.updateLog(e.getMessage( ));
 }
 }
 };
 
-class FTServer1
+class FTServer extends Thread
 {
 private ServerSocket serverSocket;
-FTServer1( )
+private FTServerFrame fsf;
+FTServer(FTServerFrame fsf)
+{
+this.fsf=fsf;
+}
+public void run( )
 {
 try
 {
@@ -107,9 +121,15 @@ Socket socket;
 RequestProcessor requestProcessor;
 while(true)
 {
-System.out.println("Server is ready to accept on port 5500 ....");
+System.out.println("Server started");
+SwingUtilities.invokeLater(new Thread( ){
+public void run( )
+{
+fsf.updateLog("Server is ready to accept on port 5500 ....");
+}
+});
 socket=this.serverSocket.accept( );
-requestProcessor=new RequestProcessor(socket);
+requestProcessor=new RequestProcessor(socket,fsf);
 }
 }
 catch(Exception e)
@@ -117,8 +137,51 @@ catch(Exception e)
 System.out.println(e.getMessage( ));
 }
 }
+};
+
+class FTServerFrame extends JFrame implements ActionListener
+{
+private FTServer server;
+private JButton button;
+private Container container;
+private JTextArea textArea;
+private JScrollPane scrollPane;
+private boolean serverStatus=false;
+FTServerFrame( )
+{
+container=getContentPane( );
+container.setLayout(new BorderLayout( ));
+button=new JButton("Start");
+button.addActionListener(this);
+textArea=new JTextArea( );
+scrollPane=new JScrollPane(textArea,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+container.add(scrollPane,BorderLayout.CENTER);
+container.add(button,BorderLayout.SOUTH);
+server=new FTServer(this);
+setLocation(100,100);
+setSize(400,400);
+setVisible(true);
+}
+public void updateLog(String msg)
+{
+textArea.append(msg+"\n");
+}
+public void actionPerformed(ActionEvent ev)
+{
+if(serverStatus==false)
+{
+server.start( );
+serverStatus=true;
+button.setText("Stop");
+}
+else
+{
+
+}
+
+}
 public static void main(String gg[ ])
 {
-FTServer1 ftServer1=new FTServer1( );
+FTServerFrame fsf=new FTServerFrame( );
 }
-}
+};
