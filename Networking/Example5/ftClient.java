@@ -45,6 +45,10 @@ public void add(File file)
 this.files.add(file);
 fireTableDataChanged( );
 }
+public ArrayList<File> getFiles( )
+{
+return files;
+}
 };
 
 class FTClientFrame extends JFrame
@@ -107,10 +111,73 @@ File selectedFile=jfc.getSelectedFile();
 model.add(selectedFile);
 }
 }
-};
-class FileUploadViewPanel extends JPanel
+public ArrayList<File> getFiles( )
 {
-
+return model.getFiles( );
+}
+};
+class FileUploadViewPanel extends JPanel implements ActionListener
+{
+private JButton uploadFilesButton;
+private JPanel progressPanelsContainer;
+private JScrollPane jsp;
+private ArrayList<ProgressPanel> progressPanels;
+ArrayList<File> files;
+FileUploadViewPanel( )
+{
+uploadFilesButton=new JButton("Upload File");
+setLayout(new BorderLayout( ));
+add(uploadFilesButton,BorderLayout.NORTH);
+uploadFilesButton.addActionListener(this);
+}
+public void actionPerformed(ActionEvent ev)
+{
+files=fileSelectionPanel.getFiles();
+if(files.size( )==0)
+{
+JOptionPane.showMessageDialog(FTClientFrame.this,"No files selected to upload");
+return;
+}
+progressPanelsContainer=new JPanel( );
+progressPanelsContainer.setLayout(new GridLayout(files.size( ),1));
+ProgressPanel progressPanel;
+progressPanels=new ArrayList<>();
+for(File file:files)
+{
+progressPanel=new ProgressPanel(file);
+progressPanels.add(progressPanel);
+progressPanelsContainer.add(progressPanel);
+}
+jsp=new JScrollPane(progressPanelsContainer,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+add(jsp,BorderLayout.CENTER);
+this.revalidate();
+this.repaint();
+}
+class ProgressPanel extends JPanel
+{
+private File file;
+private JLabel fileNameLabel;
+private JProgressBar progressBar;
+private long fileLength;
+public ProgressPanel(File file)
+{
+this.file=file;
+this.fileLength=file.length();
+this.fileNameLabel=new JLabel("Uploading : "+file.getAbsolutePath( ));
+this.progressBar=new JProgressBar(1,100);
+setLayout(new GridLayout(2,1));
+add(fileNameLabel);
+add(progressBar);
+}
+public void updateProgressBar(long bytesUploaded)
+{
+int percentage;
+if(bytesUploaded==fileLength)percentage=100;
+else percentage=(int)(bytesUploaded*100/fileLength);
+progressBar.setValue(percentage);
+if(percentage==100)fileNameLabel.setText("Uploaded : "+file.getAbsolutePath( ));
+}
+};
 };
 public static void main(String gg[ ])
 {
