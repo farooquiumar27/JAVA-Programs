@@ -6,6 +6,47 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.table.*;
 
+class FileUploadEvent
+{
+private String uploaderId;
+private File file;
+private long numberOfBytesUploaded;
+public FileUploadEvent( )
+{
+this.file=null;
+this.uploaderId=null;
+this.numberOfBytesUploaded=0;
+}
+public void setUploaderId(String uploaderId)
+{
+this.uploaderId=uploaderId;
+}
+public String getUploaderId()
+{
+return this.uploaderId;
+}
+public void setFile(File file)
+{
+this.file=file;
+}
+public File getFile()
+{
+return this.file;
+}
+public void setNumberOfBytesUploaded(long numberOfBytesUploaded)
+{
+this.numberOfBytesUploaded=numberOfBytesUploaded;
+}
+public long getNumberOfBytesUploaded()
+{
+return this.numberOfBytesUploaded;
+}
+};
+interface FileUploadListener
+{
+public void fileUploadStatusChanged(FileUploadEvent fileUploadEvent);
+};
+
 class FileModel extends AbstractTableModel
 {
 private ArrayList<File> files;
@@ -72,14 +113,6 @@ setSize(1200,600);
 setLocation(10,20);
 setVisible(true);
 }
-public void setBytesUploaded(String id,long bytes)
-{
-
-}
-public void fileUploaded(String id)
-{
-
-}
 class FileSelectionPanel extends JPanel implements ActionListener
 {
 private JLabel titleLabel;
@@ -116,13 +149,14 @@ public ArrayList<File> getFiles( )
 return model.getFiles( );
 }
 };
-class FileUploadViewPanel extends JPanel implements ActionListener
+class FileUploadViewPanel extends JPanel implements ActionListener,FileUploadListener
 {
 private JButton uploadFilesButton;
 private JPanel progressPanelsContainer;
 private JScrollPane jsp;
 private ArrayList<ProgressPanel> progressPanels;
 ArrayList<File> files;
+ArrayList<FileUploadThread> fileUploaders;
 FileUploadViewPanel( )
 {
 uploadFilesButton=new JButton("Upload File");
@@ -142,26 +176,52 @@ progressPanelsContainer=new JPanel( );
 progressPanelsContainer.setLayout(new GridLayout(files.size( ),1));
 ProgressPanel progressPanel;
 progressPanels=new ArrayList<>();
+fileUploaders=new ArrayList<>();
+FileUploadThread fut;
+String uploaderId;
 for(File file:files)
 {
-progressPanel=new ProgressPanel(file);
+uploaderId=UUID.randomUUID().toString();
+progressPanel=new ProgressPanel(uploaderId,file);
 progressPanels.add(progressPanel);
 progressPanelsContainer.add(progressPanel);
+fut=new FileUploadThread(this,uploaderId,file,host,portNumber);
+fileUploaders.add(fut);
 }
 jsp=new JScrollPane(progressPanelsContainer,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 add(jsp,BorderLayout.CENTER);
 this.revalidate();
 this.repaint();
+for(FileUploadThread fileUploadThread : fileUploaders)
+{
+fileUploadThread.start( );
+}
+}
+public void fileUploadStatusChanged(FileUploadEvent fileUploadEvent)
+{
+String uploaderId=fileUploadEvent.getUploaderId();
+long numberOfBytesUploaded=fileUploadEvent.getNumberOfBytesUploaded();
+File file=fileUploadEvent.getFile();
+for(ProgressPanel progressPanel : progressPanels)
+{
+if(progressPanel.getId().equals(uploaderId))
+{
+progressPanel.updateProgressBar(numberOfBytesUploaded);
+break;
+}
+}
 }
 class ProgressPanel extends JPanel
 {
 private File file;
+private String id;
 private JLabel fileNameLabel;
 private JProgressBar progressBar;
 private long fileLength;
-public ProgressPanel(File file)
+public ProgressPanel(String id,File file)
 {
 this.file=file;
+this.id=id;
 this.fileLength=file.length();
 this.fileNameLabel=new JLabel("Uploading : "+file.getAbsolutePath( ));
 this.progressBar=new JProgressBar(1,100);
@@ -169,13 +229,20 @@ setLayout(new GridLayout(2,1));
 add(fileNameLabel);
 add(progressBar);
 }
+public String getId()
+{
+return id;
+}
 public void updateProgressBar(long bytesUploaded)
 {
 int percentage;
 if(bytesUploaded==fileLength)percentage=100;
-else percentage=(int)(bytesUploaded*100/fileLength);
+else
+{
+percentage=(int)(bytesUploaded*100/fileLength);
 progressBar.setValue(percentage);
 if(percentage==100)fileNameLabel.setText("Uploaded : "+file.getAbsolutePath( ));
+}
 }
 };
 };
@@ -187,14 +254,14 @@ FTClientFrame fcf=new FTClientFrame("localhost",5500);
 
 class FileUploadThread extends Thread
 {
-private FTClientFrame fcf;
 private String id;
+private FileUploadListener fileUploadListener;
 private File file;
 private String host;
 private int portNumber;
-FileUploadThread(FTClientFrame fcf,String id,File file,String host,int portNumber)
+FileUploadThread(FileUploadListener fileUploadListener,String id,File file,String host,int portNumber)
 {
-this.fcf=fcf;
+this.fileUploadListener=fileUploadListener;
 this.id=id;
 this.file=file;
 this.host=host;
@@ -262,7 +329,11 @@ os.flush( );
 x=x+bytesReadCount;
 long brc=bytesReadCount;
 SwingUtilities.invokeLater(()->{
-fcf.setBytesUploaded(id,brc);
+FileUploadEvent fue=new FileUploadEvent();
+fue.setUploaderId(id);
+fue.setFile(file);
+fue.setNumberOfBytesUploaded(brc);
+fileUploadListener.fileUploadStatusChanged(fue);
 });
 }
 fis.close( );
@@ -273,10 +344,6 @@ if(bytesReadCount==-1)continue;
 break;
 }
 socket.close( );
-System.out.println("File send successfully");
-SwingUtilities.invokeLater(()->{
-fcf.fileUploaded(id);
-});
 }catch(Exception e)
 {
 System.out.println(e);

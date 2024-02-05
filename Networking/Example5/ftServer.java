@@ -64,7 +64,7 @@ System.out.println("Name of file : "+fileName);
 fsf.updateLog("Length of file is : "+lengthOfFile);
 fsf.updateLog("Name of file : "+fileName);
 
-File file=new File("uploads"+fileName);
+File file=new File("uploads"+File.separator+fileName);
 if(file.exists( ))file.delete( );
 
 FileOutputStream fos=new FileOutputStream(file,false);
