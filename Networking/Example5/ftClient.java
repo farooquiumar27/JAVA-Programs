@@ -238,11 +238,9 @@ public void updateProgressBar(long bytesUploaded)
 int percentage;
 if(bytesUploaded==fileLength)percentage=100;
 else
-{
-percentage=(int)(bytesUploaded*100/fileLength);
+percentage=(int)((bytesUploaded*100)/fileLength);
 progressBar.setValue(percentage);
 if(percentage==100)fileNameLabel.setText("Uploaded : "+file.getAbsolutePath( ));
-}
 }
 };
 };
@@ -327,7 +325,7 @@ bytesReadCount=fis.read(bytes);
 os.write(bytes,0,bytesReadCount);
 os.flush( );
 x=x+bytesReadCount;
-long brc=bytesReadCount;
+long brc=x;
 SwingUtilities.invokeLater(()->{
 FileUploadEvent fue=new FileUploadEvent();
 fue.setUploaderId(id);

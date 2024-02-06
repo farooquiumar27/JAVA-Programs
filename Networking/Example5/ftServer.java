@@ -113,6 +113,17 @@ catch(Exception e)
 System.out.println(e.getMessage( ));
 }
 }
+public void shutDown( )
+{
+try
+{
+serverSocket.close();
+}
+catch(Exception e)
+{
+System.out.println(e);
+}
+}
 private void startListening( )
 {
 try
@@ -134,6 +145,7 @@ requestProcessor=new RequestProcessor(socket,fsf);
 }
 catch(Exception e)
 {
+System.out.println("Server stoped Listening");
 System.out.println(e.getMessage( ));
 }
 }
@@ -157,7 +169,6 @@ textArea=new JTextArea( );
 scrollPane=new JScrollPane(textArea,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 container.add(scrollPane,BorderLayout.CENTER);
 container.add(button,BorderLayout.SOUTH);
-server=new FTServer(this);
 setLocation(100,100);
 setSize(400,400);
 setVisible(true);
@@ -170,15 +181,18 @@ public void actionPerformed(ActionEvent ev)
 {
 if(serverStatus==false)
 {
+server=new FTServer(this);
 server.start( );
 serverStatus=true;
 button.setText("Stop");
 }
 else
 {
-
+server.shutDown( );
+serverStatus=false;
+button.setText("Start");
+textArea.append("Server stoped");
 }
-
 }
 public static void main(String gg[ ])
 {
